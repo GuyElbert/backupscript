@@ -15,15 +15,17 @@ SIZE_THRESHOLD_MB = 100  # Threshold in Gigabytes
 def mount_directory(mount_point, device):
     try:
     # Create the mount point if it doesn't exist
-        if not os.path.exists(mount_point):
-            os.makedirs(mount_point)
-            print(f"Created mount point: {mount_point}")
+        #if not os.path.exists(mount_point):
+            #os.makedirs(mount_point)
+            #print(f"Created mount point: {mount_point}")
 
     # Check if the device is already mounted
         if not os.path.ismount(mount_point):
         # Execute the mount command
         # The list format is safer as it avoids shell injection vulnerabilities
-            subprocess.check_call(["mount", "-t cifs", "-o username=Brothergelbert,password=Loverainbow1!", device, mount_point])
+            #subprocess.check_call(["mount", "-t cifs", "-o username=Brothergelbert,password=, device, mount_point])
+            mount_cmd =  ["mount.cifs", "-o username=Brothergelbert,password=, str(device), str(mount_point)]
+            subprocess.run(mount_cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             print(f"Successfully mounted {device} to {mount_point}")
         else:
             print(f"{device} is already mounted at {mount_point}")
@@ -31,10 +33,13 @@ def mount_directory(mount_point, device):
     except subprocess.CalledProcessError as e:
         print(f"Error mounting: {e}")
         print(f"Stderr: {e.stderr.decode('utf-8') if e.stderr else 'N/A'}")
+        sys.exit(1)
     except FileNotFoundError:
         print("Error: 'mount' command not found. Ensure it's in your system's PATH.")
+        sys.exit(1)
     except Exception as e:
-        print(f"An unexpected error occurred: {e}")	
+        print(f"An unexpected error occurred: {e}")
+        sys.exit(1)
 
 def get_dir_size(path):
     """Calculates the total size of a directory in bytes."""
