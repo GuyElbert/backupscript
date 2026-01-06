@@ -1,0 +1,92 @@
+ssh into machine
+
+Go to directory of file you would like to make a tarball of
+
+tar -czvf archive_name.tar directory_name
+
+(To untar tar -xvf filename.tar)
+
+rsync to destination 
+
+rsync -av /path/to/local/file.txt username@remote_host:/path/to/remote/destination/
+
+Delete the directory
+
+rm -r directory_name
+
+
+How to automate
+
+crontab
+
+Set up ssh keys
+
+1. Set up passwordless SSH authentication 
+Generate an SSH key pair if you don't have one, using $ ssh-keygen on your local machine.
+Copy the public key to the remote server. 
+Use the ssh-copy-id command, replacing user and remote_host with your remote username and IP address or hostname: 
+$ ssh-copy-id user@remote_host. 
+You will be prompted for the remote user's password one last time.
+Test the connection by logging in to the remote server. 
+You should not be asked for a password: $ ssh user@remote_host.
+
+Automatic tarball script
+
+#!/bin/bash
+
+# Define variables
+SOURCE_DIR="/path/to/your/source_directory"  # Directory to archive
+BACKUP_DIR="/path/to/your/backup_location"  # Where to store the tarball
+TIMESTAMP=$(date +%Y-%m-%d_%H-%M-%S) # Add a timestamp to the filename
+TARBALL_NAME="backup_$TIMESTAMP.tar.gz" # Name of the tarball
+
+# Create the tarball (c=create, z=gzip compress, v=verbose, f=file)
+tar -czvf "$BACKUP_DIR/$TARBALL_NAME" "$SOURCE_DIR"
+
+# Optional: Remove older backups (e.g., older than 7 days)
+find "$BACKUP_DIR" -mtime +7 -name "*.tar.gz" -delete
+
+
+Script for automatic backup using cron
+
+1. Create the Backup Script 
+Create a bash script (e.g., check_and_backup.sh) that checks the directory size and initiates the backup if the size limit is reached. 
+bash
+#!/bin/bash
+
+# Directory to monitor
+SOURCE_DIR="/path/to/your/directory"
+
+# Backup destination directory
+DEST_DIR="/path/to/your/backup/location"
+
+# Size threshold in megabytes (e.g., 500 MB)
+SIZE_THRESHOLD_MB=500
+
+# Get the directory size in megabytes using 'du -sm'
+# The 'du -sm' command outputs size in MiB followed by the directory name.
+# 'awk' is used to extract just the size value.
+CURRENT_SIZE_MB=$(du -sm "$SOURCE_DIR" | awk '{print $1}')
+
+# Check if the current size exceeds the threshold
+if [ "$CURRENT_SIZE_MB" -ge "$SIZE_THRESHOLD_MB" ]; then
+    echo "Directory size ($CURRENT_SIZE_MB MB) exceeds threshold ($SIZE_THRESHOLD_MB MB). Starting backup..."
+
+    # Create a timestamped archive file name
+    BACKUP_FILE="backup-$(date +%Y%m%d%H%M%S).tar.gz"
+
+    # Create a compressed archive of the directory using tar
+    # -c: create, -z: gzip compression, -f: specify file name
+    tar -czf "$DEST_DIR/$BACKUP_FILE" "$SOURCE_DIR"
+    
+    echo "Backup completed: $DEST_DIR/$BACKUP_FILE"
+else
+    echo "Directory size ($CURRENT_SIZE_MB MB) is within the limit ($SIZE_THRESHOLD_MB MB). No backup needed."
+fi
+
+
+Without cron maybe
+
+Alternative: Event-Based Monitoring (Advanced)
+For more immediate action, you can use the inotify-tools package to monitor the filesystem for changes in real-time and trigger the script. This method is more complex than cron but more responsive to size changes. 
+By combining the du command for size checking and tar for archiving within a shell script automated by cron, you can effectively manage directory backups based on a specific size threshold.
